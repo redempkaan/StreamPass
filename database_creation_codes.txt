@@ -1,0 +1,213 @@
+CREATE DATABASE gamepass
+    WITH
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    CONNECTION LIMIT = -1
+    IS_TEMPLATE = False;
+
+CREATE TABLE public.arkadaslik
+(
+    id integer NOT NULL,
+    kullanici_id_1 integer,
+    kullanici_id_2 integer,
+    durum character varying,
+    olusturma_tarihi date,
+    PRIMARY KEY (id)
+);
+
+ALTER TABLE IF EXISTS public.arkadaslik
+    OWNER to postgres;
+
+CREATE TYPE durum AS ENUM ('onay_bekliyor', 'arkadas', 'engelli');
+ALTER TABLE arkadaslik
+ALTER COLUMN durum TYPE durum 
+USING durum::durum;
+
+ALTER TABLE IF EXISTS public.arkadaslik
+    ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 );
+
+CREATE TABLE public.kullanici
+(
+    kullanici_id integer NOT NULL,
+    ad character varying,
+    soyad character varying,
+    takma_ad character varying,
+    uyelik_tarihi date,
+    email character varying,
+    sifre character varying,
+    abonelik_plani character varying,
+    PRIMARY KEY (kullanici_id),
+    CONSTRAINT email_unique UNIQUE (email),
+    CONSTRAINT takma_ad_unique UNIQUE (takma_ad)
+);
+
+ALTER TABLE IF EXISTS public.kullanici
+    OWNER to postgres;
+create type abonelik_plani as enum ('aylik','yillik','deneme_suresi');
+ALTER TABLE kullanici
+ALTER COLUMN abonelik_plani TYPE abonelik_plani
+USING abonelik_plani::abonelik_plani;
+
+
+CREATE TABLE public.oyun
+(
+    oyun_id integer NOT NULL,
+    oyun_adi character varying,
+    eklenme_tarihi date,
+    kategori integer,
+    PRIMARY KEY (oyun_id)
+);
+
+ALTER TABLE IF EXISTS public.oyun
+    OWNER to postgres;
+
+
+CREATE TABLE public.kullanici_oyun
+(
+    kullanici_id integer NOT NULL,
+    oyun_id integer NOT NULL,
+    oyun_adi character varying,
+    oynama_suresi integer,
+    favori_durumu boolean
+);
+
+ALTER TABLE IF EXISTS public.kullanici_oyun
+    OWNER to postgres;
+
+CREATE TABLE public.odeme_bilgisi
+(
+    odeme_id integer,
+    kullanici_id integer,
+    abonelik_plani abonelik_plani,
+    odeme_tarihi date,
+    odeme_tutari integer
+);
+
+ALTER TABLE IF EXISTS public.odeme_bilgisi
+    OWNER to postgres;
+
+ALTER TABLE IF EXISTS public.odeme_bilgisi
+    ADD PRIMARY KEY (odeme_id);
+
+ALTER TABLE IF EXISTS public.odeme_bilgisi
+    ALTER COLUMN odeme_id SET NOT NULL;
+
+ALTER TABLE IF EXISTS public.odeme_bilgisi
+    ALTER COLUMN odeme_id ADD GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 );
+
+ALTER TABLE IF EXISTS public.odeme_bilgisi
+    ADD CONSTRAINT kullanici_id_f_odeme FOREIGN KEY (kullanici_id)
+    REFERENCES public.kullanici (kullanici_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX IF NOT EXISTS fki_kullanici_id_f_odeme
+    ON public.odeme_bilgisi(kullanici_id);
+
+ALTER TABLE IF EXISTS public.kullanici_oyun
+    ADD CONSTRAINT kullanici_id_f_kullanici_oyun FOREIGN KEY (kullanici_id)
+    REFERENCES public.kullanici (kullanici_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX IF NOT EXISTS fki_kullanici_id_f_kullanici_oyun
+    ON public.kullanici_oyun(kullanici_id);
+
+
+ALTER TABLE IF EXISTS public.kullanici_oyun
+    ADD CONSTRAINT oyun_id_f_kullanici_oyun FOREIGN KEY (oyun_id)
+    REFERENCES public.oyun (oyun_id) MATCH SIMPLE
+    ON UPDATE NO ACTION
+    ON DELETE NO ACTION
+    NOT VALID;
+CREATE INDEX IF NOT EXISTS fki_oyun_id_f_kullanici_oyun
+    ON public.kullanici_oyun(oyun_id);
+
+
+INSERT INTO kullanici
+VALUES (1, 'ezgi', 'demir', 'ezgi_d','01.01.23', 'ezgidemir@gmail.com', 'ezgi123*', 'aylik');
+
+INSERT INTO kullanici
+VALUES (2, 'parla', 'korkmaz', 'parla_k','09.01.23', 'parlakorkmaz@gmail.com', 'parla123*', 'aylik');
+
+INSERT INTO kullanici
+VALUES (3, 'yildiz', 'kaya', 'yildiz3','12.03.23', 'yildizkaya@gmail.com', 'yildiz123*', 'aylik');
+
+INSERT INTO kullanici
+VALUES (4, 'eser', 'altun', 'eserr','25.05.22', 'altuneser1@gmail.com', 'eser1', 'yillik');
+
+INSERT INTO kullanici
+VALUES (5, 'günes', 'cetin', 'gunesc','10.01.23', 'gunes_cetin@gmail.com', 'gunes1923', 'aylik');
+
+INSERT INTO kullanici
+VALUES (6, 'bora', 'yilmaz', 'yilmazbora','02.09.21', 'borayilmaz@gmail.com', 'bora82', 'yillik');
+
+INSERT INTO kullanici
+VALUES (7, 'yasemin', 'al', 'yasemin_al','30.03.23', 'yaseminal@gmail.com', 'yasemin*', 'yillik');
+
+INSERT INTO kullanici
+VALUES (8, 'ozlem', 'uysal', 'ozlem_u','08.10.22', 'ozlemuysall@gmail.com', 'ozlem12', 'aylik');
+
+INSERT INTO kullanici
+VALUES (9, 'goksel', 'aydin', 'gokselaydinn','22.06.21', 'gokselaydin@gmail.com', 'aydin12*', 'yillik');
+
+INSERT INTO kullanici
+VALUES (10, 'efe', 'koca', 'efe_koca','10.04.23', 'efekoca@gmail.com', 'efekoca123', 'yillik');
+
+INSERT INTO kullanici
+VALUES (11, 'elcin', 'oz', 'elcin_oz','12.05.23', 'elcinnoz@gmail.com', 'elcin321', 'deneme_suresi');
+
+INSERT INTO kullanici
+VALUES (12, 'cicek', 'gursoy', 'gursoy_cicek','19.07.22', 'cicekgursoy@gmail.com', 'cicek123*', 'aylik');
+
+INSERT INTO arkadaslik(kullanici_id_1, kullanici_id_2,durum,olusturma_tarihi)
+VALUES (8, 10, 'onay_bekliyor','20.04.23');
+
+INSERT INTO arkadaslik(kullanici_id_1, kullanici_id_2,durum,olusturma_tarihi)
+VALUES (8, 9, 'arkadas','20.04.23');
+
+INSERT INTO arkadaslik(kullanici_id_1, kullanici_id_2,durum,olusturma_tarihi)
+VALUES (8, 1, 'arkadas','28.04.23');
+
+INSERT INTO arkadaslik(kullanici_id_1, kullanici_id_2,durum,olusturma_tarihi)
+VALUES (8, 2, 'arkadas','19.05.23');
+
+INSERT INTO arkadaslik(kullanici_id_1, kullanici_id_2,durum,olusturma_tarihi)
+VALUES (8, 11, 'arkadas','21.05.23');
+
+INSERT INTO arkadaslik(kullanici_id_1, kullanici_id_2,durum,olusturma_tarihi)
+VALUES (8, 3, 'arkadas','21.05.23');
+
+INSERT INTO oyun
+VALUES (1, 'lost kingdom', '15.03.23', 2);
+
+INSERT INTO oyun
+VALUES (2, 'doomsday', '26.11.22', 1);
+
+INSERT INTO oyun
+VALUES (3, 'code of ascendancy', '19.03.23', 3);
+
+INSERT INTO oyun
+VALUES (4, 'secret paradox', '01.04.23', 3);
+
+INSERT INTO oyun VALUES(5, 'wowclassic', '2021-09-10', 5)
+
+INSERT INTO oyun VALUES(6, 'gowragnarok', '2022-09-10', 4)
+
+INSERT INTO oyun VALUES(7, 'wowretail', '2022-09-21', 5)
+
+INSERT INTO kullanici_oyun
+VALUES (2, 2, 'doomsday', 1,true);
+
+INSERT INTO kullanici_oyun
+VALUES (5, 1, 'lost kingdom', 1,true);
+
+
+
+
+
+
+
+
+
+
